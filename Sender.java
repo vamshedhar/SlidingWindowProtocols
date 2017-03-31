@@ -45,9 +45,12 @@ class Sender
 
 		int waitingForAck = 0;
 
+		long startTime = System.currentTimeMillis();
+
 		while (!(endOfFile && waitingForAck == nextPacket)) {
 
 			while(nextPacket - waitingForAck < WINDOW_SIZE && !endOfFile){
+				startTime = System.currentTimeMillis();
 				int startByte = nextPacket * MSS;
 				int endByte = (nextPacket + 1) * MSS;
 
@@ -76,14 +79,14 @@ class Sender
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
 			try{
-				clientSocket.setSoTimeout(TIMEOUT);
+				clientSocket.setSoTimeout(TIMEOUT - ((new Date()).getTime() - startTime));
 
 				clientSocket.receive(receivePacket);
 
 				RDTAck ackPacket = new RDTAck(receivePacket.getData());
 
 				System.out.println("Received ACK: " + ackPacket.getSeqNo());
-				waitingForAck = ackPacket.getSeqNo() + 1;
+				waitingForAck = Math.max(waitingForAck, ackPacket.getSeqNo() + 1);
 				System.out.println("");
 
 				Thread.sleep(1000);
@@ -107,6 +110,8 @@ class Sender
 					DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
 					clientSocket.send(sendPacket);
 				}
+
+				startTime = System.currentTimeMillis();
 
 				message += "; Timer started";
 
