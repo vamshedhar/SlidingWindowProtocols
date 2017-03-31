@@ -16,7 +16,7 @@ class Sender
 	public static int TIMEOUT = 10000000;
 
 	public static String filename = "inputfile.txt";
-	
+
 
 	public static void main(String args[]) throws Exception
 	{
@@ -57,6 +57,7 @@ class Sender
 			byte[] receiveData = new byte[MSS];
 			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
 			clientSocket.send(sendPacket);
+			System.out.println("Sent: " + (++packetCount));
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 			clientSocket.receive(receivePacket);
 			String modifiedSentence = new String(receivePacket.getData());

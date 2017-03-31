@@ -4,14 +4,14 @@ import java.nio.ByteBuffer;
 
 public class RDTPacket {
 
-	public int seq;
+	private int seqNo;
 	
-	public byte[] data;
+	private byte[] data;
 	
-	public boolean last;
+	private boolean last;
 
-	public RDTPacket(int seq, byte[] data, boolean last) {
-		this.seq = seq;
+	public RDTPacket(int seqNo, byte[] data, boolean last) {
+		this.seqNo = seqNo;
 		this.data = data;
 		this.last = last;
 	}
@@ -22,17 +22,17 @@ public class RDTPacket {
 		byte[] sequenceNo = Arrays.copyOfRange(packetData, 1, 5);
 		ByteBuffer wrapped = ByteBuffer.wrap(sequenceNo);
 
-		this.seq = wrapped.getInt();
+		this.seqNo = wrapped.getInt();
 
 		this.data = Arrays.copyOfRange(packetData, 5, packetData.length);
 	}
 
-	public int getSeq() {
-		return seq;
+	public int getSeqNo() {
+		return seqNo;
 	}
 
-	public void setSeq(int seq) {
-		this.seq = seq;
+	public void setSeqNo(int seqNo) {
+		this.seqNo = seqNo;
 	}
 
 	public byte[] getData() {
@@ -43,7 +43,7 @@ public class RDTPacket {
 		this.data = data;
 	}
 
-	public boolean isLast() {
+	public boolean getLast() {
 		return last;
 	}
 
@@ -53,7 +53,7 @@ public class RDTPacket {
 
 	public byte[] generatePacket(){
 
-		byte[] sequenceNo = ByteBuffer.allocate(4).putInt(this.seq).array();
+		byte[] sequenceNo = ByteBuffer.allocate(4).putInt(this.seqNo).array();
 		byte last = (byte) (this.last ? 1 : 0);
 
 		System.out.println("Seq Length: " + sequenceNo.length);
@@ -70,7 +70,7 @@ public class RDTPacket {
 
 	@Override
 	public String toString() {
-		return "UDPPacket [seq=" + seq + ", data=" + Arrays.toString(data)
+		return "UDPPacket [seq=" + seqNo + ", data=" + Arrays.toString(data)
 				+ ", last=" + last + "]";
 	}
 	

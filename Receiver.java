@@ -8,7 +8,6 @@ class Receiver
 	{
 		DatagramSocket serverSocket = new DatagramSocket(9876);
 		byte[] receivedPacket = new byte[1024];
-		byte[] sendData = new byte[1024];
 		BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
 
 		System.out.println("Server Started: Waiting for packets!!");
@@ -17,27 +16,34 @@ class Receiver
 
 		while(!end)
 		{
+
+			// Receive Packet
 			DatagramPacket receivePacket = new DatagramPacket(receivedPacket, receivedPacket.length);
 			serverSocket.receive(receivePacket);
 
 			byte[] receiveData = receivePacket.getData();
 
+			// Convert Packet data to packet object
 			RDTPacket packet = new RDTPacket(receiveData);
+			end = packet.getLast();
 
-			end = packet.last;
-			
-			String sentence = new String(packet.data);
-			System.out.println("Received Packet: " + packet.seq);
-			System.out.println("Last Packet: " + packet.last);
-			System.out.println("");
+			String sentence = new String(packet.getData());
+			System.out.println("Received Packet: " + packet.getSeqNo());
+			System.out.println("Last Packet: " + end);
 			writer.write(sentence);
 			InetAddress IPAddress = receivePacket.getAddress();
 			int port = receivePacket.getPort();
-			String capitalizedSentence = sentence.toUpperCase();
-			sendData = capitalizedSentence.getBytes();
-			DatagramPacket sendPacket =
-			new DatagramPacket(sendData, sendData.length, IPAddress, port);
+
+
+			RDTAck ackPacket = new RDTAck(packet.getSeqNo());
+			byte[] ackData = ackPacket.generatePacket();
+
+			Thread.sleep(1000);
+			
+			DatagramPacket sendPacket = new DatagramPacket(ackData, ackData.length, IPAddress, port);
 			serverSocket.send(sendPacket);
+			System.out.println("Sent ACK: " + ackData.getSeqNo());
+			System.out.println("");
 		}
 
 		writer.flush();
