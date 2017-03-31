@@ -16,6 +16,7 @@ class Sender
 	public static int TIMEOUT = 10000000;
 
 	public static String filename = "inputfile.txt";
+	
 
 	public static void main(String args[]) throws Exception
 	{
@@ -37,12 +38,22 @@ class Sender
 
 		int packetCount = 0;
 
-		while (true) {
+		boolean end = false;
+
+		while (!end) {
 
 			int startByte = packetCount * MSS;
 			int endByte = (packetCount + 1) * MSS;
 
-			byte[] sendData = Arrays.copyOfRange(data, packetCount * MSS, endByte > FILE_SIZE ? FILE_SIZE : endByte);
+			if (endByte > FILE_SIZE) {
+				end = true;
+			}
+
+			byte[] partData = Arrays.copyOfRange(data, packetCount * MSS, endByte > FILE_SIZE ? FILE_SIZE : endByte);
+			RDTPacket dataPacket = new RDTPacket(packetCount + 1, partData, end);
+
+			byte[] sendData = dataPacket.generatePacket();
+
 			byte[] receiveData = new byte[MSS];
 			DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
 			clientSocket.send(sendPacket);
@@ -53,28 +64,9 @@ class Sender
 			System.out.println("");
 			System.out.println("");
 
-			if (endByte > FILE_SIZE) {
-				break;
-			}
+			
 		}
 
 		clientSocket.close();
-
-
-		// BufferedReader inFromUser =
-		// new BufferedReader(new InputStreamReader(System.in));
-		// DatagramSocket clientSocket = new DatagramSocket();
-		// InetAddress IPAddress = InetAddress.getByName("localhost");
-		// byte[] sendData = new byte[1024];
-		// byte[] receiveData = new byte[1024];
-		// String sentence = inFromUser.readLine();
-		// sendData = sentence.getBytes();
-		// DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
-		// clientSocket.send(sendPacket);
-		// DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-		// clientSocket.receive(receivePacket);
-		// String modifiedSentence = new String(receivePacket.getData());
-		// System.out.println("FROM SERVER:" + modifiedSentence);
-		// clientSocket.close();
 	}
 }

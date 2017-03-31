@@ -1,23 +1,30 @@
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 
 class Receiver
 {
 	public static void main(String args[]) throws Exception
 	{
 		DatagramSocket serverSocket = new DatagramSocket(9876);
-		byte[] receiveData = new byte[1024];
+		byte[] receivedPacket = new byte[1024];
 		byte[] sendData = new byte[1024];
 
 		System.out.println("Server Started: Waiting for packets!!");
 
-		int packetCount = 0;
 		while(true)
 		{
-			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+			DatagramPacket receivePacket = new DatagramPacket(receivedPacket, receivedPacket.length);
 			serverSocket.receive(receivePacket);
-			String sentence = new String( receivePacket.getData());
-			System.out.println("Received Packet: " + (++packetCount));
+
+			byte[] receiveData = receivePacket.getData();
+
+			RDTPacket packet = new RDTPacket(receiveData);
+
+			String sentence = new String(packet.data);
+			System.out.println("Received Packet: " + packet.seq);
+			System.out.println("Last Packet: " + packet.last);
+			System.out.println("");
 			System.out.println(sentence);
 			InetAddress IPAddress = receivePacket.getAddress();
 			int port = receivePacket.getPort();
