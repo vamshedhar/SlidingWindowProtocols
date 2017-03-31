@@ -67,7 +67,7 @@ class Sender
 				DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
 				clientSocket.send(sendPacket);
 
-				System.out.println("Sending " + nextPacket);
+				System.out.println("Sending " + nextPacket + "; Packet Size: " + sendData.length);
 
 				nextPacket++;
 				packetsSent++;

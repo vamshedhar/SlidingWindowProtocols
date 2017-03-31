@@ -16,7 +16,7 @@ public class RDTPacket {
 		this.last = last;
 	}
 
-	public RDTPacket(byte[] packetData) {
+	public RDTPacket(byte[] packetData, int length) {
 		this.last = Integer.valueOf(packetData[0]) == 1 ? true : false;
 
 		byte[] sequenceNo = Arrays.copyOfRange(packetData, 1, 5);
@@ -24,7 +24,7 @@ public class RDTPacket {
 
 		this.seqNo = wrapped.getInt();
 
-		this.data = Arrays.copyOfRange(packetData, 5, packetData.length);
+		this.data = Arrays.copyOfRange(packetData, 5, length);
 	}
 
 	public int getSeqNo() {
