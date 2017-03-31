@@ -56,8 +56,6 @@ public class RDTPacket {
 		byte[] sequenceNo = ByteBuffer.allocate(4).putInt(this.seqNo).array();
 		byte last = (byte) (this.last ? 1 : 0);
 
-		System.out.println("Seq Length: " + sequenceNo.length);
-
 		byte[] packet = new byte[1 + sequenceNo.length + this.data.length];
 
 		packet[0] = last;
