@@ -20,29 +20,28 @@ class Receiver
 			// Receive Packet
 			DatagramPacket receivePacket = new DatagramPacket(receivedPacket, receivedPacket.length);
 			serverSocket.receive(receivePacket);
-
 			byte[] receiveData = receivePacket.getData();
 
 			// Convert Packet data to packet object
 			RDTPacket packet = new RDTPacket(receiveData);
+
+			System.out.println("Received Segment " + packet.getSeqNo());
+			
 			end = packet.getLast();
-
-			String sentence = new String(packet.getData());
-			System.out.println("Received Packet: " + packet.getSeqNo());
-			System.out.println("Last Packet: " + end);
-			writer.write(sentence);
-			InetAddress IPAddress = receivePacket.getAddress();
-			int port = receivePacket.getPort();
+			String text = new String(packet.getData());
+			writer.write(text);
 
 
+			// Create and ACK Packet with the sequence number
 			RDTAck ackPacket = new RDTAck(packet.getSeqNo());
 			byte[] ackData = ackPacket.generatePacket();
 
 			Thread.sleep(1000);
+
+			DatagramPacket sendACK = new DatagramPacket(ackData, ackData.length, receivePacket.getAddress(), receivePacket.getPort());
+			serverSocket.send(sendACK);
 			
-			DatagramPacket sendPacket = new DatagramPacket(ackData, ackData.length, IPAddress, port);
-			serverSocket.send(sendPacket);
-			System.out.println("Sent ACK: " + ackData.getSeqNo());
+			System.out.println("ACK Sent: " + ackPacket.getSeqNo());
 			System.out.println("");
 		}
 
