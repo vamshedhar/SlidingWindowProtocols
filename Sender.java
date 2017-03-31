@@ -33,33 +33,32 @@ class Sender
 		int FILE_SIZE = data.length;
 		System.out.println("FILE SIZE: " + FILE_SIZE + " bytes");
 
-		
-
 		// Open send socket
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 
-		int packetCount = 0;
+		int packetsSent = 0;
 
-		boolean end = false;
+		boolean endOfFile = false;
 
 		int nextPacket = 0;
 
 		int waitingForAck = 0;
 
-		while (!end) {
+		while (!(endOfFile && waitingForAck == nextPacket)) {
 
-			while(nextPacket - waitingForAck < WINDOW_SIZE){
+			while(nextPacket - waitingForAck < WINDOW_SIZE && !endOfFile){
 				int startByte = nextPacket * MSS;
 				int endByte = (nextPacket + 1) * MSS;
 
 				if (endByte > FILE_SIZE) {
-					end = true;
+					System.out.println("End of File");
+					endOfFile = true;
 				}
 
 				byte[] partData = Arrays.copyOfRange(data, nextPacket * MSS, endByte > FILE_SIZE ? FILE_SIZE : endByte);
 
-				RDTPacket dataPacket = new RDTPacket(nextPacket, partData, end);
+				RDTPacket dataPacket = new RDTPacket(nextPacket, partData, endOfFile);
 
 				byte[] sendData = dataPacket.generatePacket();
 
@@ -71,25 +70,8 @@ class Sender
 				System.out.println("Sending " + nextPacket);
 
 				nextPacket++;
+				packetsSent++;
 			}
-
-
-			// int startByte = packetCount * MSS;
-			// int endByte = (packetCount + 1) * MSS;
-
-			// if (endByte > FILE_SIZE) {
-			// 	end = true;
-			// }
-
-			// byte[] partData = Arrays.copyOfRange(data, packetCount * MSS, endByte > FILE_SIZE ? FILE_SIZE : endByte);
-			// RDTPacket dataPacket = new RDTPacket(packetCount + 1, partData, end);
-
-			// byte[] sendData = dataPacket.generatePacket();
-
-			// byte[] receiveData = new byte[MSS];
-			// DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
-			// clientSocket.send(sendPacket);
-			// System.out.println("Sent: " + (++packetCount));
 
 
 			byte[] receiveData = new byte[4];
