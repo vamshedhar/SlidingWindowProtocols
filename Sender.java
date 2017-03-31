@@ -13,10 +13,13 @@ class Sender
 
 	public static int WINDOW_SIZE = 8;
 
-	public static int TIMEOUT = 5000;
+	public static long TIMEOUT = 5000;
 
 	public static String filename = "inputfile.txt";
 
+	public static double CHECKSUM_ERROR = 0.1;
+
+	public static double LOST_PACKET = 0.1;
 
 	public static void main(String args[]) throws Exception
 	{
@@ -66,7 +69,12 @@ class Sender
 				byte[] sendData = dataPacket.generatePacket();
 
 				DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
-				clientSocket.send(sendPacket);
+
+				if (Math.random() > LOST_PACKET) {
+					clientSocket.send(sendPacket);
+				} else{
+					System.out.println("Lost Packet: " + nextPacket);
+				}
 
 				System.out.println("Sending " + nextPacket + "; Packet Size: " + sendData.length);
 
@@ -79,17 +87,30 @@ class Sender
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
 			try{
-				clientSocket.setSoTimeout(TIMEOUT - ((new Date()).getTime() - startTime));
+				long TIMER = TIMEOUT - (System.currentTimeMillis() - startTime);
+
+				// System.out.println(TIMER > 0 ? (int) TIMER : 10);
+
+				if (TIMER < 0) {
+					throw new SocketTimeoutException();
+				}
+
+				clientSocket.setSoTimeout((int) TIMER);
 
 				clientSocket.receive(receivePacket);
 
 				RDTAck ackPacket = new RDTAck(receivePacket.getData());
 
 				System.out.println("Received ACK: " + ackPacket.getSeqNo());
-				waitingForAck = Math.max(waitingForAck, ackPacket.getSeqNo() + 1);
-				System.out.println("");
 
 				Thread.sleep(1000);
+
+				if (waitingForAck <= ackPacket.getSeqNo()) {
+					startTime = System.currentTimeMillis();
+				}
+
+				waitingForAck = Math.max(waitingForAck, ackPacket.getSeqNo() + 1);
+				System.out.println("");
 			} catch(SocketTimeoutException e){
 
 				String message = "Packet " + waitingForAck + ": Timer expired; Resending";
@@ -108,7 +129,12 @@ class Sender
 					byte[] sendData = dataPacket.generatePacket();
 
 					DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
-					clientSocket.send(sendPacket);
+
+					if (Math.random() > LOST_PACKET) {
+						clientSocket.send(sendPacket);
+					}else{
+						System.out.println("Lost Packet: " + i);
+					}
 				}
 
 				startTime = System.currentTimeMillis();

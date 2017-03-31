@@ -4,6 +4,10 @@ import java.util.Arrays;
 
 class Receiver
 {
+
+	public static double LOST_ACK = 0.05;
+
+
 	public static void main(String args[]) throws Exception
 	{
 		DatagramSocket serverSocket = new DatagramSocket(9876);
@@ -14,7 +18,7 @@ class Receiver
 
 		boolean end = false;
 
-		int waitingForAck == -1;
+		int waitingForAck = -1;
 
 		while(!end)
 		{
@@ -48,7 +52,12 @@ class Receiver
 			Thread.sleep(1000);
 
 			DatagramPacket sendACK = new DatagramPacket(ackData, ackData.length, receivePacket.getAddress(), receivePacket.getPort());
-			serverSocket.send(sendACK);
+
+			if (Math.random() > LOST_ACK) {
+				serverSocket.send(sendACK);
+			} else{
+				System.out.println("Lost ACK");
+			}
 
 			System.out.println("ACK Sent: " + ackPacket.getSeqNo());
 			System.out.println("");
