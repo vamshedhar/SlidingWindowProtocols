@@ -13,7 +13,7 @@ class Sender
 
 	public static int WINDOW_SIZE = 8;
 
-	public static int TIMEOUT = 10000000;
+	public static int TIMEOUT = 5000;
 
 	public static String filename = "inputfile.txt";
 
@@ -62,8 +62,6 @@ class Sender
 
 				byte[] sendData = dataPacket.generatePacket();
 
-				byte[] receiveData = new byte[MSS];
-
 				DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
 				clientSocket.send(sendPacket);
 
@@ -76,15 +74,45 @@ class Sender
 
 			byte[] receiveData = new byte[4];
 			DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-			clientSocket.receive(receivePacket);
 
-			RDTAck ackPacket = new RDTAck(receivePacket.getData());
+			try{
+				clientSocket.setSoTimeout(TIMEOUT);
 
-			System.out.println("Received ACK: " + ackPacket.getSeqNo());
-			waitingForAck = ackPacket.getSeqNo() + 1;
-			System.out.println("");
+				clientSocket.receive(receivePacket);
 
-			Thread.sleep(1000);
+				RDTAck ackPacket = new RDTAck(receivePacket.getData());
+
+				System.out.println("Received ACK: " + ackPacket.getSeqNo());
+				waitingForAck = ackPacket.getSeqNo() + 1;
+				System.out.println("");
+
+				Thread.sleep(1000);
+			} catch(SocketTimeoutException e){
+
+				String message = "Packet " + waitingForAck + ": Timer expired; Resending";
+
+				for(int i = waitingForAck; i < nextPacket; i++){
+
+					message += (" " + i);
+
+					int startByte = i * MSS;
+					int endByte = (i + 1) * MSS;
+
+					byte[] partData = Arrays.copyOfRange(data, i * MSS, endByte > FILE_SIZE ? FILE_SIZE : endByte);
+
+					RDTPacket dataPacket = new RDTPacket(i, partData, endByte > FILE_SIZE);
+
+					byte[] sendData = dataPacket.generatePacket();
+
+					DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, receiverPort);
+					clientSocket.send(sendPacket);
+				}
+
+				message += "; Timer started";
+
+				System.out.println(message);
+			}
+			
 		}
 
 		clientSocket.close();
