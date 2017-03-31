@@ -14,6 +14,8 @@ class Receiver
 
 		boolean end = false;
 
+		int waitingForAck == -1;
+
 		while(!end)
 		{
 
@@ -25,14 +27,22 @@ class Receiver
 			// Convert Packet data to packet object
 			RDTPacket packet = new RDTPacket(receiveData, receivePacket.getLength());
 
-			System.out.println("Received Segment " + packet.getSeqNo() + "; Packet Size: " + receivePacket.getLength());
-			
-			end = packet.getLast();
-			String text = new String(packet.getData());
-			writer.write(text);
+			if (waitingForAck == -1) {
+				waitingForAck = packet.getSeqNo();
+			}
+
+			if (waitingForAck == packet.getSeqNo()) {
+				System.out.println("Received Segment " + packet.getSeqNo() + ";");
+				end = packet.getLast();
+				String text = new String(packet.getData());
+				writer.write(text);
+				waitingForAck++;
+			} else{
+				System.out.println("Discarded " + packet.getSeqNo() + "; Out of Order Segment Received; Expecting " + waitingForAck);
+			}
 
 			// Create and ACK Packet with the sequence number
-			RDTAck ackPacket = new RDTAck(packet.getSeqNo());
+			RDTAck ackPacket = new RDTAck(waitingForAck - 1);
 			byte[] ackData = ackPacket.generatePacket();
 
 			Thread.sleep(1000);
