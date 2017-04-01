@@ -50,8 +50,6 @@ class Receiver
 			// Convert Packet data to packet object
 			RDTPacket packet = new RDTPacket(receiveData, receivePacket.getLength());
 
-			System.out.println("Is valid checksum: " + packet.isValidPacket());
-
 			if (packet.isValidPacket()) {
 				if (waitingForAck % lastSeqNo == packet.getSeqNo()) {
 					System.out.println("Received Segment " + packet.getSeqNo() + ";");

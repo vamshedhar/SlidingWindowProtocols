@@ -40,8 +40,6 @@ class Sender
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 
-		int packetsSent = 0;
-
 		int lastPacketNo = FILE_SIZE / MSS;
 
 		boolean endOfFile = false;
@@ -52,7 +50,7 @@ class Sender
 
 		long startTime = System.currentTimeMillis();
 
-		System.out.println(lastPacketNo);
+		// System.out.println(lastPacketNo);
 
 		while (waitingForAck <= lastPacketNo) {
 
@@ -85,7 +83,6 @@ class Sender
 				System.out.println("Sending " + sqeNo + "; Packet Size: " + sendData.length);
 
 				nextPacket++;
-				packetsSent++;
 			}
 
 
