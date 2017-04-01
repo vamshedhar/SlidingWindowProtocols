@@ -10,6 +10,8 @@ public class RDTPacket {
 	
 	private boolean last;
 
+	private String checksum;
+
 	public RDTPacket(int seqNo, byte[] data, boolean last) {
 		this.seqNo = seqNo;
 		this.data = data;
@@ -17,14 +19,21 @@ public class RDTPacket {
 	}
 
 	public RDTPacket(byte[] packetData, int length) {
-		this.last = Integer.valueOf(packetData[0]) == 1 ? true : false;
+		this.checksum = new String(Arrays.copyOfRange(packetData, 0, 16));
 
-		byte[] sequenceNo = Arrays.copyOfRange(packetData, 1, 5);
+		this.last = Integer.valueOf(packetData[16]) == 1 ? true : false;
+
+		byte[] sequenceNo = Arrays.copyOfRange(packetData, 17, 21);
 		ByteBuffer wrapped = ByteBuffer.wrap(sequenceNo);
 
 		this.seqNo = wrapped.getInt();
 
-		this.data = Arrays.copyOfRange(packetData, 5, length);
+		this.data = Arrays.copyOfRange(packetData, 21, length);
+
+		// System.out.println(checksum);
+		// System.out.println(last);
+		// System.out.println(Arrays.toString(sequenceNo));
+		// System.out.println(seqNo);
 	}
 
 	public int getSeqNo() {
@@ -51,17 +60,112 @@ public class RDTPacket {
 		this.last = last;
 	}
 
-	public byte[] generatePacket(){
+	public String onesComplement(String value){
+		String complementValue = "";
 
+		// System.out.println(value);
+
+		for(int i = 0; i < value.length(); i++){
+			if (value.charAt(i) == '0') {
+				complementValue += "1";
+			} else{
+				complementValue += "0";
+			}
+		}
+
+		return complementValue;
+	}
+
+	public String onesComplementSum(String a, String b){
+		int data1 = Integer.parseInt(a, 2);
+		int data2 = Integer.parseInt(b, 2);
+
+		int sum = data1 + data2;
+
+		String result = Integer.toString(sum, 2);
+
+		while(result.length() > 16 && result.charAt(0) == '1'){
+			data1 = Integer.parseInt(result.substring(1), 2);
+			data2 = Integer.parseInt(result.substring(0, 1), 2);
+
+			sum = data1 + data2;
+
+			result = Integer.toString(sum, 2);
+		}
+
+		return result;
+	}
+
+	public String generateChecksum(byte[] packetData){
+
+		String[] binary16Data = new String[packetData.length / 2];
+
+		for(int i = 0; i < packetData.length; i += 2){
+			if (i + 1 >= packetData.length) {
+				break;
+			}
+
+			int value = ((packetData[i] & 0xff) << 8) + (packetData[i + 1] & 0xff);
+
+			// System.out.println(value);
+
+			binary16Data[i / 2] = Integer.toString(value, 2);
+		}
+
+		String onesComplementSumValue = binary16Data[0];
+
+		// System.out.println(Arrays.toString(binary16Data));
+
+		for(int j = 1; j < binary16Data.length; j++){
+			onesComplementSumValue = onesComplementSum(onesComplementSumValue, binary16Data[j]);
+		}
+
+		if (onesComplementSumValue.length() < 16) {
+			int length = onesComplementSumValue.length();
+			for(int i = 0; i < 16 - length; i++){
+				onesComplementSumValue = "0" + onesComplementSumValue;
+			}
+		}
+
+		String checksum = onesComplement(onesComplementSumValue);
+
+		return checksum;
+	}
+
+	public byte[] generatePacketToHash(){
 		byte[] sequenceNo = ByteBuffer.allocate(4).putInt(this.seqNo).array();
 		byte last = (byte) (this.last ? 1 : 0);
 
-		byte[] packet = new byte[1 + sequenceNo.length + this.data.length];
+		// System.out.println(Arrays.toString(sequenceNo));
 
-		packet[0] = last;
+		byte[] packetToHash = new byte[1 + sequenceNo.length + this.data.length];
 
-		System.arraycopy(sequenceNo, 0, packet, 1, sequenceNo.length);
-		System.arraycopy(this.data, 0, packet, sequenceNo.length + 1, this.data.length);
+		packetToHash[0] = last;
+
+		System.arraycopy(sequenceNo, 0, packetToHash, 1, sequenceNo.length);
+		System.arraycopy(this.data, 0, packetToHash, sequenceNo.length + 1, this.data.length);
+
+		return packetToHash;
+	}
+
+	public byte[] generatePacket(){
+
+		byte[] packetToHash = generatePacketToHash();
+
+		// System.out.println(Arrays.toString(packetToHash));
+
+		checksum = generateChecksum(packetToHash);
+
+		// System.out.println(checksum);
+
+		// System.out.println(checksum);
+
+		byte[] checksumBytes = checksum.getBytes();
+
+		byte[] packet = new byte[16 + packetToHash.length];
+
+		System.arraycopy(checksumBytes, 0, packet, 0, checksumBytes.length);
+		System.arraycopy(packetToHash, 0, packet, checksumBytes.length, packetToHash.length);
 
 		return packet;
 	}
