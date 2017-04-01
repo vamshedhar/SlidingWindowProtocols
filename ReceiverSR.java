@@ -7,6 +7,7 @@ class ReceiverSR
 
 	public static double LOST_ACK = 0.05;
 
+	public static int bitsOfSqeunceNo = 4;
 
 	public static void main(String args[]) throws Exception
 	{

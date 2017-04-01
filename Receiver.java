@@ -7,14 +7,16 @@ class Receiver
 
 	public static double LOST_ACK = 0.05;
 
-	public static int bitsOfSqeunceNo = 4;
-
 	public static void main(String args[]) throws Exception
 	{
+
+		int bitsOfSqeunceNo = Sender.bitsOfSqeunceNo;
+		int MSS = Sender.MSS;
+
 		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
 		DatagramSocket serverSocket = new DatagramSocket(9876);
-		byte[] receivedPacket = new byte[500 + 4 + 1];
+		byte[] receivedPacket = new byte[MSS + 4 + 1];
 		BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
 
 		System.out.println("Server Started: Waiting for packets!!");
