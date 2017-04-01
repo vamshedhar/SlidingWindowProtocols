@@ -113,13 +113,13 @@ class Sender
 
 				Thread.sleep(1000);
 
-				int actualSqeNo = (waitingForAck / lastSeqNo) * waitingForAck + ackPacket.getSeqNo();
+				int actualSeqNo = (waitingForAck / lastSeqNo) * lastSeqNo + ackPacket.getSeqNo();
 
-				if (waitingForAck <= actualSqeNo) {
+				if (waitingForAck <= actualSeqNo) {
 					startTime = System.currentTimeMillis();
 				}
 
-				waitingForAck = Math.max(waitingForAck, actualSqeNo + 1);
+				waitingForAck = Math.max(waitingForAck, actualSeqNo + 1);
 				System.out.println("");
 			} catch(SocketTimeoutException e){
 
