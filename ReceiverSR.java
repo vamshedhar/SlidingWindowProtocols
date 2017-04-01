@@ -7,12 +7,12 @@ class ReceiverSR
 
 	public static double LOST_ACK = 0.05;
 
-	public static int bitsOfSqeunceNo = 4;
-
 	public static void main(String args[]) throws Exception
 	{
 		int bitsOfSqeunceNo = Sender.bitsOfSqeunceNo;
 		int MSS = Sender.MSS;
+
+		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
 		HashMap<Integer, RDTPacket> receivedPackets = new HashMap<Integer, RDTPacket>();
 		DatagramSocket serverSocket = new DatagramSocket(9876);
@@ -40,11 +40,13 @@ class ReceiverSR
 	
 				System.out.println("Received Segment " + packet.getSeqNo() + ";");
 
-				if(!receivedPackets.containsKey(packet.getSeqNo())){
-					receivedPackets.put(packet.getSeqNo(), packet);
+				int actualSeqNo = (waitingForPacket / lastSeqNo) * lastSeqNo + packet.getSeqNo();
 
-					if (waitingForPacket != packet.getSeqNo()) {
-						System.out.println("Out of Order Segment Received; Stored to Buffer; Expecting " + waitingForPacket);
+				if(!receivedPackets.containsKey(actualSeqNo)){
+					receivedPackets.put(actualSeqNo, packet);
+
+					if (waitingForPacket != actualSeqNo) {
+						System.out.println("Out of Order Segment Received; Stored to Buffer; Expecting " + waitingForPacket % lastSeqNo);
 					}
 				} else{
 					System.out.println("Discarded Segment " + packet.getSeqNo() + ": Duplicate Packet;");
@@ -55,7 +57,7 @@ class ReceiverSR
 					end = packet.getLast();
 					String text = new String(packet.getData());
 					writer.write(text);
-					System.out.println("Delivered Packet: " + waitingForPacket);
+					System.out.println("Delivered Packet: " + waitingForPacket % lastSeqNo);
 					waitingForPacket++;
 				}
 

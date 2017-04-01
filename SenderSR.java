@@ -17,14 +17,12 @@ class SenderSR
 
 	public static String filename = "fulldata.txt";
 
-	public static double CHECKSUM_ERROR = 0.1;
-
 	public static double LOST_PACKET = 0.1;
 
 	public static void main(String args[]) throws Exception
 	{
 
-		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo) - 1.0);
+		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
 		HashMap<Integer, Long> sentPacketTimers = new HashMap<Integer, Long>();
 
@@ -46,7 +44,7 @@ class SenderSR
 		DatagramSocket clientSocket = new DatagramSocket();
 		InetAddress IPAddress = InetAddress.getByName("localhost");
 
-		int packetsSent = 0;
+		int lastPacketNo = FILE_SIZE / MSS;
 
 		boolean endOfFile = false;
 
@@ -54,12 +52,9 @@ class SenderSR
 
 		int waitingForAck = 0;
 
-		long startTime = System.currentTimeMillis();
-
-		while (!(endOfFile && waitingForAck == nextPacket)) {
+		while (waitingForAck <= lastPacketNo) {
 
 			while(nextPacket - waitingForAck < WINDOW_SIZE && !endOfFile){
-				startTime = System.currentTimeMillis();
 
 				sentPacketTimers.put(nextPacket, System.currentTimeMillis());
 
@@ -73,7 +68,7 @@ class SenderSR
 
 				byte[] partData = Arrays.copyOfRange(data, nextPacket * MSS, endByte > FILE_SIZE ? FILE_SIZE : endByte);
 
-				RDTPacket dataPacket = new RDTPacket(nextPacket, partData, endOfFile);
+				RDTPacket dataPacket = new RDTPacket(nextPacket % lastSeqNo, partData, endOfFile);
 
 				byte[] sendData = dataPacket.generatePacket();
 
@@ -85,10 +80,9 @@ class SenderSR
 					System.out.println("Lost Packet: " + nextPacket);
 				}
 
-				System.out.println("Sending " + nextPacket + "; Packet Size: " + sendData.length);
+				System.out.println("Sending " + nextPacket % lastSeqNo + "; Packet Size: " + sendData.length);
 
 				nextPacket++;
-				packetsSent++;
 			}
 
 
@@ -110,9 +104,11 @@ class SenderSR
 
 				RDTAck ackPacket = new RDTAck(receivePacket.getData());
 
+				int actualSeqNo = (waitingForAck / lastSeqNo) * lastSeqNo + ackPacket.getSeqNo();
+
 				System.out.println("Received ACK: " + ackPacket.getSeqNo());
 
-				receivedAcks.put(ackPacket.getSeqNo(), ackPacket);
+				receivedAcks.put(actualSeqNo, ackPacket);
 
 				Thread.sleep(1000);
 
@@ -123,14 +119,14 @@ class SenderSR
 				System.out.println("");
 			} catch(SocketTimeoutException e){
 
-				System.out.println("Packet " + waitingForAck + ": Timer expired; Resending " + waitingForAck);
+				System.out.println("Packet " + waitingForAck % lastSeqNo + ": Timer expired; Resending " + waitingForAck % lastSeqNo);
 
 				int startByte = waitingForAck * MSS;
 				int endByte = (waitingForAck + 1) * MSS;
 
 				byte[] partData = Arrays.copyOfRange(data, startByte, endByte > FILE_SIZE ? FILE_SIZE : endByte);
 
-				RDTPacket dataPacket = new RDTPacket(waitingForAck, partData, endByte > FILE_SIZE);
+				RDTPacket dataPacket = new RDTPacket(waitingForAck % lastSeqNo, partData, endByte > FILE_SIZE);
 
 				byte[] sendData = dataPacket.generatePacket();
 
@@ -139,7 +135,7 @@ class SenderSR
 				if (Math.random() > LOST_PACKET) {
 					clientSocket.send(sendPacket);
 				}else{
-					System.out.println("Lost Packet: " + waitingForAck);
+					System.out.println("Lost Packet: " + waitingForAck % lastSeqNo);
 				}
 
 				sentPacketTimers.put(waitingForAck, System.currentTimeMillis());
