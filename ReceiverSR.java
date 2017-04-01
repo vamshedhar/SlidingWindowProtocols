@@ -5,7 +5,7 @@ import java.util.*;
 class ReceiverSR
 {
 
-	public static double LOST_ACK = 0.00;
+	public static double LOST_ACK = 0.05;
 
 
 	public static void main(String args[]) throws Exception

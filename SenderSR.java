@@ -19,7 +19,7 @@ class SenderSR
 
 	public static double CHECKSUM_ERROR = 0.1;
 
-	public static double LOST_PACKET = 0.2;
+	public static double LOST_PACKET = 0.1;
 
 	public static void main(String args[]) throws Exception
 	{
