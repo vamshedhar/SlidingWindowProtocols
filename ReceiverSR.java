@@ -35,12 +35,12 @@ class ReceiverSR
 
 			System.out.println("Received Segment " + packet.getSeqNo() + ";");
 
-			if (waitingForPacket != packet.getSeqNo()) {
-				System.out.println("Out of Order Segment Received; Stored to Buffer; Expecting " + waitingForPacket);
-			}
-
 			if(!receivedPackets.containsKey(packet.getSeqNo())){
 				receivedPackets.put(packet.getSeqNo(), packet);
+
+				if (waitingForPacket != packet.getSeqNo()) {
+					System.out.println("Out of Order Segment Received; Stored to Buffer; Expecting " + waitingForPacket);
+				}
 			} else{
 				System.out.println("Discarded Segment " + packet.getSeqNo() + ": Duplicate Packet;");
 			}
