@@ -12,6 +12,8 @@ public class RDTPacket {
 
 	private String checksum;
 
+	private double CHECKSUM_ERROR = 0.1;
+
 	public RDTPacket(int seqNo, byte[] data, boolean last) {
 		this.seqNo = seqNo;
 		this.data = data;
@@ -156,6 +158,10 @@ public class RDTPacket {
 
 		checksum = generateChecksum(packetToHash);
 
+		if (Math.random() <= CHECKSUM_ERROR) {
+			addErrorToChecksum();
+		}
+
 		// System.out.println(checksum);
 
 		// System.out.println(checksum);
@@ -168,6 +174,25 @@ public class RDTPacket {
 		System.arraycopy(packetToHash, 0, packet, checksumBytes.length, packetToHash.length);
 
 		return packet;
+	}
+
+	public void addErrorToChecksum(){
+		if (this.checksum.charAt(0) == '0') {
+			this.checksum = "1" + this.checksum.substring(1);
+		} else{
+			this.checksum = "0" + this.checksum.substring(1);
+		}
+	}
+
+	public boolean isValidPacket(){
+		byte[] packetToHash = generatePacketToHash();
+
+		String calculatedChecksum = generateChecksum(packetToHash);
+
+		// System.out.println("Calculated Checksum: " + calculatedChecksum);
+		// System.out.println("Received Checksum: " + this.checksum);
+
+		return this.checksum.equals(calculatedChecksum);
 	}
 
 	@Override

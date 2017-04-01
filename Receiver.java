@@ -50,14 +50,20 @@ class Receiver
 			// Convert Packet data to packet object
 			RDTPacket packet = new RDTPacket(receiveData, receivePacket.getLength());
 
-			if (waitingForAck % lastSeqNo == packet.getSeqNo()) {
-				System.out.println("Received Segment " + packet.getSeqNo() + ";");
-				end = packet.getLast();
-				String text = new String(packet.getData());
-				writer.write(text);
-				waitingForAck++;
+			System.out.println("Is valid checksum: " + packet.isValidPacket());
+
+			if (packet.isValidPacket()) {
+				if (waitingForAck % lastSeqNo == packet.getSeqNo()) {
+					System.out.println("Received Segment " + packet.getSeqNo() + ";");
+					end = packet.getLast();
+					String text = new String(packet.getData());
+					writer.write(text);
+					waitingForAck++;
+				} else{
+					System.out.println("Discarded " + packet.getSeqNo() + "; Out of Order Segment Received; Expecting " + waitingForAck % lastSeqNo);
+				}
 			} else{
-				System.out.println("Discarded " + packet.getSeqNo() + "; Out of Order Segment Received; Expecting " + waitingForAck % lastSeqNo);
+				System.out.println("Discarded " + packet.getSeqNo() + "; Checksum Error;");
 			}
 
 			// Create and ACK Packet with the sequence number
