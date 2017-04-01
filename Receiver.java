@@ -7,9 +7,12 @@ class Receiver
 
 	public static double LOST_ACK = 0.05;
 
+	public static int bitsOfSqeunceNo = 4;
 
 	public static void main(String args[]) throws Exception
 	{
+		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
+
 		DatagramSocket serverSocket = new DatagramSocket(9876);
 		byte[] receivedPacket = new byte[500 + 4 + 1];
 		BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
@@ -18,7 +21,7 @@ class Receiver
 
 		boolean end = false;
 
-		int waitingForAck = -1;
+		int waitingForAck = 0;
 
 		while(!end)
 		{
@@ -31,22 +34,18 @@ class Receiver
 			// Convert Packet data to packet object
 			RDTPacket packet = new RDTPacket(receiveData, receivePacket.getLength());
 
-			if (waitingForAck == -1) {
-				waitingForAck = packet.getSeqNo();
-			}
-
-			if (waitingForAck == packet.getSeqNo()) {
+			if (waitingForAck % lastSeqNo == packet.getSeqNo()) {
 				System.out.println("Received Segment " + packet.getSeqNo() + ";");
 				end = packet.getLast();
 				String text = new String(packet.getData());
 				writer.write(text);
 				waitingForAck++;
 			} else{
-				System.out.println("Discarded " + packet.getSeqNo() + "; Out of Order Segment Received; Expecting " + waitingForAck);
+				System.out.println("Discarded " + packet.getSeqNo() + "; Out of Order Segment Received; Expecting " + waitingForAck % lastSeqNo);
 			}
 
 			// Create and ACK Packet with the sequence number
-			RDTAck ackPacket = new RDTAck(waitingForAck - 1);
+			RDTAck ackPacket = new RDTAck((waitingForAck - 1) % lastSeqNo);
 			byte[] ackData = ackPacket.generatePacket();
 
 			Thread.sleep(1000);
