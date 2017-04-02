@@ -1,6 +1,6 @@
 import java.io.*;
 import java.net.*;
-import java.util.Arrays;
+import java.util.*;
 
 class Sender
 {
@@ -49,6 +49,14 @@ class Sender
 		int waitingForAck = 0;
 
 		long startTime = System.currentTimeMillis();
+
+		Queue<Integer> WINDOW = new ArrayDeque<>();
+
+		for(int i = 0; i < WINDOW_SIZE; i++){
+			WINDOW.add(i);
+		}
+
+		System.out.println(String.valueOf(WINDOW));
 
 		// System.out.println(lastPacketNo);
 
@@ -105,16 +113,35 @@ class Sender
 				RDTAck ackPacket = new RDTAck(receivePacket.getData());
 
 				System.out.println("Received ACK: " + ackPacket.getSeqNo());
+				System.out.println("Waiting for ACK: " + waitingForAck);
 
-				Thread.sleep(1000);
+				Thread.sleep(100);
 
-				int actualSeqNo = (waitingForAck / lastSeqNo) * lastSeqNo + ackPacket.getSeqNo();
-
-				if (waitingForAck <= actualSeqNo) {
-					startTime = System.currentTimeMillis();
+				if (WINDOW.contains(ackPacket.getSeqNo())){
+					while(ackPacket.getSeqNo() != WINDOW.poll()){
+						startTime = System.currentTimeMillis();
+						WINDOW.add((waitingForAck + WINDOW_SIZE) % lastSeqNo);
+						waitingForAck++;
+						System.out.println(String.valueOf(WINDOW));
+					}
+					WINDOW.add((waitingForAck + WINDOW_SIZE) % lastSeqNo);
+					waitingForAck++;
+					System.out.println(String.valueOf(WINDOW));
 				}
 
-				waitingForAck = Math.max(waitingForAck, actualSeqNo + 1);
+				// if ((waitingForAck - 1) % lastSeqNo == ackPacket.getSeqNo()) {
+				// 	actualSeqNo = waitingForAck - 1;
+				// } else if(waitingForAck % lastSeqNo == ackPacket.getSeqNo()){
+				// 	actualSeqNo = waitingForAck;
+				// } else{
+				// 	actualSeqNo = (waitingForAck / lastSeqNo) * lastSeqNo + ackPacket.getSeqNo() + 1;
+				// }
+
+				// if (waitingForAck <= actualSeqNo) {
+				// 	startTime = System.currentTimeMillis();
+				// }
+
+				// waitingForAck = Math.max(waitingForAck, actualSeqNo + 1);
 				System.out.println("");
 			} catch(SocketTimeoutException e){
 
