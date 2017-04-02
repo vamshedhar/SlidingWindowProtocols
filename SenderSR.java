@@ -19,7 +19,7 @@ class SenderSR
 
 	public static long TIMEOUT = 5000;
 
-	public static String filename = "fulldata.txt";
+	public static String transferFilename = "fulldata.txt";
 
 	public static double LOST_PACKET = 0.1;
 
@@ -32,10 +32,10 @@ class SenderSR
 
 		HashMap<Integer, RDTAck> receivedAcks = new HashMap<Integer, RDTAck>();
 
-		System.out.println("Sending file: " + filename);
+		System.out.println("Sending file: " + transferFilename);
 
 		// Read data from file into bytes
-		File file = new File(filename);
+		File file = new File(transferFilename);
 		FileInputStream inputStream = new FileInputStream(file);
 		byte[] data = new byte[(int) file.length()];
 		inputStream.read(data);

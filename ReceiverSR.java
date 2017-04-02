@@ -12,19 +12,20 @@ class ReceiverSR
 	public static double LOST_ACK = 0.05;
 
 	public static void main(String args[]) throws Exception
-	{
+	{	
+		DatagramSocket serverSocket = new DatagramSocket(9876);
+		System.out.println("Server Started: Waiting for packets!!");
 		int bitsOfSqeunceNo = SenderSR.bitsOfSqeunceNo;
 		int MSS = SenderSR.MSS;
 		int WINDOW_SIZE = SenderSR.WINDOW_SIZE;
 
 		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
+
 		HashMap<Integer, RDTPacket> receivedPackets = new HashMap<Integer, RDTPacket>();
-		DatagramSocket serverSocket = new DatagramSocket(9876);
+		
 		byte[] receivedPacket = new byte[16 + 1 + 4 + MSS];
 		BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
-
-		System.out.println("Server Started: Waiting for packets!!");
 
 		boolean end = false;
 
