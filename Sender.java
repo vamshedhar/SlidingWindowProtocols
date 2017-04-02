@@ -129,19 +129,6 @@ class Sender
 					System.out.println(String.valueOf(WINDOW));
 				}
 
-				// if ((waitingForAck - 1) % lastSeqNo == ackPacket.getSeqNo()) {
-				// 	actualSeqNo = waitingForAck - 1;
-				// } else if(waitingForAck % lastSeqNo == ackPacket.getSeqNo()){
-				// 	actualSeqNo = waitingForAck;
-				// } else{
-				// 	actualSeqNo = (waitingForAck / lastSeqNo) * lastSeqNo + ackPacket.getSeqNo() + 1;
-				// }
-
-				// if (waitingForAck <= actualSeqNo) {
-				// 	startTime = System.currentTimeMillis();
-				// }
-
-				// waitingForAck = Math.max(waitingForAck, actualSeqNo + 1);
 				System.out.println("");
 			} catch(SocketTimeoutException e){
 

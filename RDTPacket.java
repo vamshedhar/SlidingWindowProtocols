@@ -31,11 +31,6 @@ public class RDTPacket {
 		this.seqNo = wrapped.getInt();
 
 		this.data = Arrays.copyOfRange(packetData, 21, length);
-
-		// System.out.println(checksum);
-		// System.out.println(last);
-		// System.out.println(Arrays.toString(sequenceNo));
-		// System.out.println(seqNo);
 	}
 
 	public int getSeqNo() {
@@ -64,8 +59,6 @@ public class RDTPacket {
 
 	public String onesComplement(String value){
 		String complementValue = "";
-
-		// System.out.println(value);
 
 		for(int i = 0; i < value.length(); i++){
 			if (value.charAt(i) == '0') {
@@ -109,14 +102,10 @@ public class RDTPacket {
 
 			int value = ((packetData[i] & 0xff) << 8) + (packetData[i + 1] & 0xff);
 
-			// System.out.println(value);
-
 			binary16Data[i / 2] = Integer.toString(value, 2);
 		}
 
 		String onesComplementSumValue = binary16Data[0];
-
-		// System.out.println(Arrays.toString(binary16Data));
 
 		for(int j = 1; j < binary16Data.length; j++){
 			onesComplementSumValue = onesComplementSum(onesComplementSumValue, binary16Data[j]);
@@ -138,8 +127,6 @@ public class RDTPacket {
 		byte[] sequenceNo = ByteBuffer.allocate(4).putInt(this.seqNo).array();
 		byte last = (byte) (this.last ? 1 : 0);
 
-		// System.out.println(Arrays.toString(sequenceNo));
-
 		byte[] packetToHash = new byte[1 + sequenceNo.length + this.data.length];
 
 		packetToHash[0] = last;
@@ -154,17 +141,11 @@ public class RDTPacket {
 
 		byte[] packetToHash = generatePacketToHash();
 
-		// System.out.println(Arrays.toString(packetToHash));
-
 		checksum = generateChecksum(packetToHash);
 
 		if (Math.random() <= CHECKSUM_ERROR) {
 			addErrorToChecksum();
 		}
-
-		// System.out.println(checksum);
-
-		// System.out.println(checksum);
 
 		byte[] checksumBytes = checksum.getBytes();
 
@@ -188,9 +169,6 @@ public class RDTPacket {
 		byte[] packetToHash = generatePacketToHash();
 
 		String calculatedChecksum = generateChecksum(packetToHash);
-
-		// System.out.println("Calculated Checksum: " + calculatedChecksum);
-		// System.out.println("Received Checksum: " + this.checksum);
 
 		return this.checksum.equals(calculatedChecksum);
 	}

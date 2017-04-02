@@ -11,19 +11,6 @@ class Receiver
 	public static void main(String args[]) throws Exception
 	{
 
-		// byte[] toHash = "QWERTYUIOPASDFGHJKLZXCVBNM".getBytes();
-
-		// System.out.println(toHash[0]);
-		// System.out.println(toHash[1] & 0xff);
-
-		// int value = ((toHash[0] & 0xff) << 8) + (toHash[1] & 0xff);
-
-		// System.out.println(value);
-
-		// String binary = "0" + Integer.toString(value, 2);
-		// System.out.println(binary.getBytes().length);
-
-
 		int bitsOfSqeunceNo = Sender.bitsOfSqeunceNo;
 		int MSS = Sender.MSS;
 
