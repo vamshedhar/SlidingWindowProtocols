@@ -68,7 +68,7 @@ class Receiver
 			RDTAck ackPacket = new RDTAck((waitingForAck - 1) % lastSeqNo);
 			byte[] ackData = ackPacket.generatePacket();
 
-			Thread.sleep(1000);
+			Thread.sleep(100);
 
 			DatagramPacket sendACK = new DatagramPacket(ackData, ackData.length, receivePacket.getAddress(), receivePacket.getPort());
 

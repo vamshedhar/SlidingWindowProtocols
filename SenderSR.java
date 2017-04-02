@@ -13,7 +13,7 @@ class SenderSR
 
 	public static int WINDOW_SIZE = 8;
 
-	public static long TIMEOUT = 10000;
+	public static long TIMEOUT = 5000;
 
 	public static String filename = "fulldata.txt";
 
