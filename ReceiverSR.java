@@ -11,6 +11,7 @@ class ReceiverSR
 	{
 		int bitsOfSqeunceNo = Sender.bitsOfSqeunceNo;
 		int MSS = Sender.MSS;
+		int WINDOW_SIZE = Sender.WINDOW_SIZE;
 
 		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
@@ -24,6 +25,12 @@ class ReceiverSR
 		boolean end = false;
 
 		int waitingForPacket = 0;
+
+		Queue<Integer> WINDOW = new ArrayDeque<>();
+
+		for(int i = 0; i < WINDOW_SIZE; i++){
+			WINDOW.add(i);
+		}
 
 		while(!end)
 		{
@@ -40,7 +47,9 @@ class ReceiverSR
 	
 				System.out.println("Received Segment " + packet.getSeqNo() + ";");
 
-				int actualSeqNo = (waitingForPacket / lastSeqNo) * lastSeqNo + packet.getSeqNo();
+				ArrayList<Integer> WINDOW_LIST = new ArrayList<Integer>(WINDOW);
+
+				int actualSeqNo = waitingForPacket + WINDOW_LIST.indexOf(packet.getSeqNo());
 
 				if(!receivedPackets.containsKey(actualSeqNo)){
 					receivedPackets.put(actualSeqNo, packet);
@@ -54,11 +63,13 @@ class ReceiverSR
 				
 				while(receivedPackets.containsKey(waitingForPacket)){
 					RDTPacket bufferedPacket = receivedPackets.get(waitingForPacket);
-					end = packet.getLast();
-					String text = new String(packet.getData());
+					end = bufferedPacket.getLast();
+					String text = new String(bufferedPacket.getData());
 					writer.write(text);
 					System.out.println("Delivered Packet: " + waitingForPacket % lastSeqNo);
+					WINDOW.add((waitingForPacket + WINDOW_SIZE) % lastSeqNo);
 					waitingForPacket++;
+					WINDOW.remove();
 				}
 
 				// Create and ACK Packet with the sequence number

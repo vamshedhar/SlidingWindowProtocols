@@ -52,6 +52,14 @@ class SenderSR
 
 		int waitingForAck = 0;
 
+		Queue<Integer> WINDOW = new ArrayDeque<>();
+
+		for(int i = 0; i < WINDOW_SIZE; i++){
+			WINDOW.add(i);
+		}
+
+		System.out.println(String.valueOf(WINDOW));
+
 		while (waitingForAck <= lastPacketNo) {
 
 			while(nextPacket - waitingForAck < WINDOW_SIZE && !endOfFile){
@@ -77,7 +85,7 @@ class SenderSR
 				if (Math.random() > LOST_PACKET) {
 					clientSocket.send(sendPacket);
 				} else{
-					System.out.println("Lost Packet: " + nextPacket);
+					System.out.println("Lost Packet: " + nextPacket % lastSeqNo);
 				}
 
 				System.out.println("Sending " + nextPacket % lastSeqNo + "; Packet Size: " + sendData.length);
@@ -104,16 +112,21 @@ class SenderSR
 
 				RDTAck ackPacket = new RDTAck(receivePacket.getData());
 
-				int actualSeqNo = (waitingForAck / lastSeqNo) * lastSeqNo + ackPacket.getSeqNo();
-
 				System.out.println("Received ACK: " + ackPacket.getSeqNo());
+
+				ArrayList<Integer> WINDOW_LIST = new ArrayList<Integer>(WINDOW);
+
+				int actualSeqNo = waitingForAck + WINDOW_LIST.indexOf(ackPacket.getSeqNo());
 
 				receivedAcks.put(actualSeqNo, ackPacket);
 
-				Thread.sleep(1000);
+				Thread.sleep(100);
 
 				while(receivedAcks.containsKey(waitingForAck)){
+					WINDOW.add((waitingForAck + WINDOW_SIZE) % lastSeqNo);
 					waitingForAck++;
+					WINDOW.remove();
+					System.out.println(String.valueOf(WINDOW));
 				}
 
 				System.out.println("");
