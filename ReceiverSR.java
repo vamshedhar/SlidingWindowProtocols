@@ -1,3 +1,7 @@
+/**
+ *	
+ * @author Vamshedhar Reddy Chintala
+ */
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -9,9 +13,9 @@ class ReceiverSR
 
 	public static void main(String args[]) throws Exception
 	{
-		int bitsOfSqeunceNo = Sender.bitsOfSqeunceNo;
-		int MSS = Sender.MSS;
-		int WINDOW_SIZE = Sender.WINDOW_SIZE;
+		int bitsOfSqeunceNo = SenderSR.bitsOfSqeunceNo;
+		int MSS = SenderSR.MSS;
+		int WINDOW_SIZE = SenderSR.WINDOW_SIZE;
 
 		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
