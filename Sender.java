@@ -5,22 +5,78 @@ import java.util.*;
 class Sender
 {
 
-	public static int MSS = 500;
-
-	public static int receiverPort = 9876;
-
-	public static int bitsOfSqeunceNo = 4;
-
-	public static int WINDOW_SIZE = 8;
-
-	public static long TIMEOUT = 5000;
-
 	public static String filename = "fulldata.txt";
 
 	public static double LOST_PACKET = 0.1;
 
 	public static void main(String args[]) throws Exception
 	{
+
+		if (args.length != 3) {
+            System.out.println("Invalid Format!");
+            System.out.println("Expected Format: java Sender <filename or filepath> <portNum> <packetCount>");
+            return;
+        }
+
+        String parametersFileName = args[0];
+
+        int receiverPort;
+
+        // check if bit length is a valid integer
+		try{
+			receiverPort = Integer.parseInt(args[1]);
+		} catch(NumberFormatException e){
+			System.out.println("Invalid Port Number");
+			return;
+		}
+
+		int packetCount;
+
+		// check if Packet Count is a valid integer
+		try{
+			packetCount = Integer.parseInt(args[2]);
+		} catch(NumberFormatException e){
+			System.out.println("Invalid Packet Count");
+			return;
+		}
+
+
+		BufferedReader reader = new BufferedReader(new FileReader(parametersFileName));
+		List<String> lines = new ArrayList<String>();
+
+		String line;
+
+		while((line = reader.readLine()) != null) {
+		    lines.add(line.trim());
+		}
+		reader.close();
+
+		String protocol = lines.get(0);
+
+		int bitsOfSqeunceNo = Integer.parseInt(lines.get(1).split(" ")[0].trim());
+
+		int WINDOW_SIZE = Integer.parseInt(lines.get(1).split(" ")[1].trim());
+
+		int TIMEOUT = Integer.parseInt(lines.get(2)) / 1000;
+
+		int MSS = Integer.parseInt(lines.get(3));
+
+		// Main Part
+
+		// Open send socket
+		DatagramSocket clientSocket = new DatagramSocket();
+		InetAddress IPAddress = InetAddress.getByName("localhost");
+
+		String dataToReceiver = protocol + "," + bitsOfSqeunceNo + "," + WINDOW_SIZE + "," + MSS;
+
+		byte[] inputData = dataToReceiver.getBytes();
+
+		// Send protocol details to receiver
+		DatagramPacket inputDataPacket = new DatagramPacket(inputData, inputData.length, IPAddress, receiverPort);
+
+		clientSocket.send(inputDataPacket);
+
+		// Thread.sleep(100000);
 
 		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
@@ -35,10 +91,6 @@ class Sender
 
 		int FILE_SIZE = data.length;
 		System.out.println("FILE SIZE: " + FILE_SIZE + " bytes");
-
-		// Open send socket
-		DatagramSocket clientSocket = new DatagramSocket();
-		InetAddress IPAddress = InetAddress.getByName("localhost");
 
 		int lastPacketNo = FILE_SIZE / MSS;
 
@@ -55,8 +107,6 @@ class Sender
 		for(int i = 0; i < WINDOW_SIZE; i++){
 			WINDOW.add(i);
 		}
-
-		System.out.println(String.valueOf(WINDOW));
 
 		// System.out.println(lastPacketNo);
 
@@ -85,11 +135,10 @@ class Sender
 				if (Math.random() > LOST_PACKET) {
 					clientSocket.send(sendPacket);
 				} else{
-					System.out.println("Lost Packet: " + sqeNo);
+					System.out.print("Lost Packet: " + sqeNo + "; ");
 				}
 
 				System.out.println("Sending " + sqeNo + "; Packet Size: " + sendData.length);
-
 				nextPacket++;
 			}
 
@@ -100,8 +149,6 @@ class Sender
 			try{
 				long TIMER = TIMEOUT - (System.currentTimeMillis() - startTime);
 
-				// System.out.println(TIMER > 0 ? (int) TIMER : 10);
-
 				if (TIMER < 0) {
 					throw new SocketTimeoutException();
 				}
@@ -111,25 +158,19 @@ class Sender
 				clientSocket.receive(receivePacket);
 
 				RDTAck ackPacket = new RDTAck(receivePacket.getData());
-
-				System.out.println("Received ACK: " + ackPacket.getSeqNo());
-				System.out.println("Waiting for ACK: " + waitingForAck);
-
 				Thread.sleep(100);
+				System.out.println("");
+				System.out.println("Received ACK: " + ackPacket.getSeqNo());
 
 				if (WINDOW.contains(ackPacket.getSeqNo())){
 					while(ackPacket.getSeqNo() != WINDOW.poll()){
 						startTime = System.currentTimeMillis();
 						WINDOW.add((waitingForAck + WINDOW_SIZE) % lastSeqNo);
 						waitingForAck++;
-						System.out.println(String.valueOf(WINDOW));
 					}
 					WINDOW.add((waitingForAck + WINDOW_SIZE) % lastSeqNo);
 					waitingForAck++;
-					System.out.println(String.valueOf(WINDOW));
 				}
-
-				System.out.println("");
 			} catch(SocketTimeoutException e){
 
 				String message = "Packet " + waitingForAck % lastSeqNo + ": Timer expired; Resending";
@@ -163,6 +204,7 @@ class Sender
 				message += "; Timer started";
 
 				System.out.println(message);
+				System.out.println("");
 			}
 			
 		}

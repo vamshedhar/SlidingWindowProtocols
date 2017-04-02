@@ -11,12 +11,43 @@ class Receiver
 	public static void main(String args[]) throws Exception
 	{
 
-		int bitsOfSqeunceNo = Sender.bitsOfSqeunceNo;
-		int MSS = Sender.MSS;
+		if (args.length != 1) {
+            System.out.println("Invalid Format!");
+            System.out.println("Expected Format: java Receiver <portNum>");
+            return;
+        }
+
+        int receiverPort;
+        // check if bit length is a valid integer
+		try{
+			receiverPort = Integer.parseInt(args[0]);
+		} catch(NumberFormatException e){
+			System.out.println("Invalid Port Number");
+			return;
+		}
+
+		DatagramSocket serverSocket = new DatagramSocket(receiverPort);
+
+		byte[] inputData = new byte[1024];
+		DatagramPacket inputDataPacket = new DatagramPacket(inputData, inputData.length);
+		serverSocket.receive(inputDataPacket);
+
+		String inputDataText = new String(inputDataPacket.getData());
+
+		String[] inputDataArray = inputDataText.split(",");
+
+		String protocol = inputDataArray[0].trim();
+
+		int bitsOfSqeunceNo = Integer.parseInt(inputDataArray[1].trim());
+		int WINDOW_SIZE = Integer.parseInt(inputDataArray[2].trim());
+		int MSS = Integer.parseInt(inputDataArray[3].trim());
+
+		System.out.println("Receiving Protocol: " + protocol);
+
 
 		int lastSeqNo = (int) (Math.pow(2.0, (double) bitsOfSqeunceNo));
 
-		DatagramSocket serverSocket = new DatagramSocket(9876);
+		
 		byte[] receivedPacket = new byte[16 + 1 + 4 + MSS];
 		BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
 
