@@ -2,6 +2,7 @@
  *	
  * @author Vamshedhar Reddy Chintala
  */
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -61,17 +62,23 @@ class Receiver
 
 
 		if (protocol.equals("GBN")) {
+
+			// 16 bytes checksum + 1 byte for last packet + 4 bytes for seqNo + MSS
 			byte[] receivedPacket = new byte[16 + 1 + 4 + MSS];
+
+			// Data from packets is written in the following output file
 			BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
 
+			// To detect last packet and stop the server
 			boolean end = false;
 
+			// Set initial packet to 0
 			int waitingForPacket = 0;
 
 			while(!end)
 			{
 
-				// Receive Packet
+				// Receive Packet from Sender
 				DatagramPacket receivePacket = new DatagramPacket(receivedPacket, receivedPacket.length);
 				serverSocket.receive(receivePacket);
 				byte[] receiveData = receivePacket.getData();
@@ -79,7 +86,10 @@ class Receiver
 				// Convert Packet data to packet object
 				RDTPacket packet = new RDTPacket(receiveData, receivePacket.getLength());
 
+				// Check for valid checksum
 				if (packet.isValidPacket()) {
+
+					// Check if received packet is the actual expected packet
 					if (waitingForPacket % lastSeqNo == packet.getSeqNo()) {
 						System.out.println("Received Segment " + packet.getSeqNo() + ";");
 						end = packet.getLast();
@@ -97,16 +107,20 @@ class Receiver
 				RDTAck ackPacket = new RDTAck((waitingForPacket - 1) % lastSeqNo);
 				byte[] ackData = ackPacket.generatePacket();
 
+				// Adding a delay in response to show a clear flow of things
 				Thread.sleep(100);
 
+				// Sending ACK for the received packet
 				DatagramPacket sendACK = new DatagramPacket(ackData, ackData.length, receivePacket.getAddress(), receivePacket.getPort());
 
+				// Indcing a Lost ACK error. This won't actally send ACK but says that ACK was sent
 				if (Math.random() > LOST_ACK) {
 					serverSocket.send(sendACK);
 				} else{
 					System.out.println("Lost ACK");
 				}
 
+				// Message to say ACK sent
 				System.out.println("ACK Sent: " + ackPacket.getSeqNo());
 				System.out.println("");
 			}
@@ -116,17 +130,26 @@ class Receiver
 
 			serverSocket.close();
 		} else if(protocol.equals("SR")){
+
+			// Hashmap to store out of order packets to a buffer
 			HashMap<Integer, RDTPacket> receivedPackets = new HashMap<Integer, RDTPacket>();
-		
+			
+			// 16 bytes checksum + 1 byte for last packet + 4 bytes for seqNo + MSS
 			byte[] receivedPacket = new byte[16 + 1 + 4 + MSS];
+
+			// Data from packets is written in the following output file
 			BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
 
+			// To detect last packet and stop the server
 			boolean end = false;
 
+			// Set initial packet to 0
 			int waitingForPacket = 0;
 
-			Queue<Integer> WINDOW = new ArrayDeque<>();
+			// Window of expecting packets sequence no's. A queue data structure was used as only first received packet can be cleared
+ 			Queue<Integer> WINDOW = new ArrayDeque<>();
 
+ 			// Initializing window with expecting packets
 			for(int i = 0; i < WINDOW_SIZE; i++){
 				WINDOW.add(i);
 			}
@@ -134,7 +157,7 @@ class Receiver
 			while(!end)
 			{
 
-				// Receive Packet
+				// Receive Packet from Sender
 				DatagramPacket receivePacket = new DatagramPacket(receivedPacket, receivedPacket.length);
 				serverSocket.receive(receivePacket);
 				byte[] receiveData = receivePacket.getData();
@@ -142,6 +165,7 @@ class Receiver
 				// Convert Packet data to packet object
 				RDTPacket packet = new RDTPacket(receiveData, receivePacket.getLength());
 
+				// Check for checksum error in the packet
 				if (packet.isValidPacket()) {
 		
 					System.out.println("Received Segment " + packet.getSeqNo() + ";");
@@ -150,18 +174,28 @@ class Receiver
 
 					int actualSeqNo = waitingForPacket + WINDOW_LIST.indexOf(packet.getSeqNo());
 
+					// Check if the packet was already received or not. If yes discard.
 					if(!receivedPackets.containsKey(actualSeqNo)){
+
+						// Store Received packet in buffer
 						receivedPackets.put(actualSeqNo, packet);
 
+						// Check for out of order packets
 						if (waitingForPacket != actualSeqNo) {
 							System.out.println("Out of Order Segment Received; Stored to Buffer; Expecting " + waitingForPacket % lastSeqNo);
 						}
 					} else{
+						// Discard duplicate packets
 						System.out.println("Discarded Segment " + packet.getSeqNo() + ": Duplicate Packet;");
 					}
 					
+
+					// Loop to deliver recently packet and also the buffered packets in seq after the received packets
+					// Delivers all the packets in sqeuence and clear Window to receive more packets
 					while(receivedPackets.containsKey(waitingForPacket)){
 						RDTPacket bufferedPacket = receivedPackets.get(waitingForPacket);
+
+						// check if last packet
 						end = bufferedPacket.getLast();
 						String text = new String(bufferedPacket.getData());
 						writer.write(text);
@@ -175,16 +209,20 @@ class Receiver
 					RDTAck ackPacket = new RDTAck(packet.getSeqNo());
 					byte[] ackData = ackPacket.generatePacket();
 
+					// Adding a delay in response to show a clear flow of things
 					Thread.sleep(100);
 
+					// Creating an ACK packet for properly received packet
 					DatagramPacket sendACK = new DatagramPacket(ackData, ackData.length, receivePacket.getAddress(), receivePacket.getPort());
 
+					// Inducing Lost ACK Error. It says ACK sent but it actually won't send the ACK
 					if (Math.random() > LOST_ACK) {
 						serverSocket.send(sendACK);
 					} else{
 						System.out.println("Lost ACK");
 					}
 
+					// ACK message for received packet
 					System.out.println("ACK Sent: " + ackPacket.getSeqNo());
 					System.out.println("");
 				} else{
@@ -193,9 +231,11 @@ class Receiver
 
 			}
 
+			// close the writer
 			writer.flush();
 			writer.close();
 
+			// close socket
 			serverSocket.close();
 		} else{
 			serverSocket.close();

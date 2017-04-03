@@ -2,10 +2,11 @@
  *	
  * @author Vamshedhar Reddy Chintala
  */
+
 import java.util.Arrays;
 import java.nio.ByteBuffer;
 
-
+// Reliable data transfer packet class to create a packet with data and add checksum to it
 public class RDTPacket {
 
 	private int seqNo;
@@ -16,14 +17,17 @@ public class RDTPacket {
 
 	private String checksum;
 
+	// Checksum error percentage
 	private double CHECKSUM_ERROR = 0.1;
 
+	// Constructor to create packet
 	public RDTPacket(int seqNo, byte[] data, boolean last) {
 		this.seqNo = seqNo;
 		this.data = data;
 		this.last = last;
 	}
 
+	// Constructor to decode received packet
 	public RDTPacket(byte[] packetData, int length) {
 		this.checksum = new String(Arrays.copyOfRange(packetData, 0, 16));
 
@@ -61,6 +65,7 @@ public class RDTPacket {
 		this.last = last;
 	}
 
+	// Calculate 1's complement for a given binary number(passed as a string)
 	public String onesComplement(String value){
 		String complementValue = "";
 
@@ -75,6 +80,7 @@ public class RDTPacket {
 		return complementValue;
 	}
 
+	// Calculates 1's complements sum for two given 16-bit binary numbers (passed as strings)
 	public String onesComplementSum(String a, String b){
 		int data1 = Integer.parseInt(a, 2);
 		int data2 = Integer.parseInt(b, 2);
@@ -95,6 +101,7 @@ public class RDTPacket {
 		return result;
 	}
 
+	// Generate a checksum to a given byte array
 	public String generateChecksum(byte[] packetData){
 
 		String[] binary16Data = new String[packetData.length / 2];
@@ -127,6 +134,7 @@ public class RDTPacket {
 		return checksum;
 	}
 
+	// Generates packet including all the data except checksum
 	public byte[] generatePacketToHash(){
 		byte[] sequenceNo = ByteBuffer.allocate(4).putInt(this.seqNo).array();
 		byte last = (byte) (this.last ? 1 : 0);
@@ -141,12 +149,15 @@ public class RDTPacket {
 		return packetToHash;
 	}
 
+
+	// Generate packet from data and add checksum to it
 	public byte[] generatePacket(){
 
 		byte[] packetToHash = generatePacketToHash();
 
 		checksum = generateChecksum(packetToHash);
 
+		// Induce checksum error to the packet
 		if (Math.random() <= CHECKSUM_ERROR) {
 			addErrorToChecksum();
 		}
@@ -161,6 +172,7 @@ public class RDTPacket {
 		return packet;
 	}
 
+	// Add checksum error by inverting the first bit
 	public void addErrorToChecksum(){
 		if (this.checksum.charAt(0) == '0') {
 			this.checksum = "1" + this.checksum.substring(1);
@@ -169,6 +181,7 @@ public class RDTPacket {
 		}
 	}
 
+	// check if the packet is valid by comparing the checksum
 	public boolean isValidPacket(){
 		byte[] packetToHash = generatePacketToHash();
 
@@ -179,7 +192,7 @@ public class RDTPacket {
 
 	@Override
 	public String toString() {
-		return "UDPPacket [seq=" + seqNo + ", data=" + Arrays.toString(data)
+		return "RDT Packet [seq=" + seqNo + ", data=" + Arrays.toString(data)
 				+ ", last=" + last + "]";
 	}
 	
